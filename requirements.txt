@@ -1,0 +1,11 @@
+Pillow
+numpy
+scipy
+torch
+torchaudio
+torchvision
+image
+opencv-python
+librosa
+pandas
+tensorboard

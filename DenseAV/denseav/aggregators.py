@@ -182,7 +182,6 @@ class BaseAggregator(torch.nn.Module):
             preds, raw=False, agg_sim=True, agg_heads=agg_heads)
 
     def forward_batched(self, preds, agg_heads, batch_size):
-        device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
         new_preds = {k: v for k, v in preds.items()}
         big_image_feats = new_preds.pop(IMAGE_FEATS)
@@ -193,9 +192,9 @@ class BaseAggregator(torch.nn.Module):
         n_steps = math.ceil(n / batch_size)
         outputs = []
         for step in tqdm(range(n_steps), "Calculating Sim", leave=False):
-            new_preds[IMAGE_FEATS] = big_image_feats[step * batch_size:(step + 1) * batch_size].to(device)
+            new_preds[IMAGE_FEATS] = big_image_feats[step * batch_size:(step + 1) * batch_size].cuda()
             if self.use_cls:
-                new_preds[IMAGE_CLS] = big_image_cls[step * batch_size:(step + 1) * batch_size].to(device)
+                new_preds[IMAGE_CLS] = big_image_cls[step * batch_size:(step + 1) * batch_size].cuda()
 
             sim = self.forward(new_preds, agg_heads=agg_heads)
             outputs.append(sim.cpu())

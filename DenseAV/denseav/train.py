@@ -862,7 +862,6 @@ class LitAVAligner(pl.LightningModule, PyTorchModelHubMixin, repo_url="https://g
         return all_metrics
 
     def retrieval_validation(self, outputs, dataset_name):
-        device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
         if len(outputs) == 0:
             return
 
@@ -871,17 +870,17 @@ class LitAVAligner(pl.LightningModule, PyTorchModelHubMixin, repo_url="https://g
             if not self.trainer.sanity_checking:
                 print(results[IMAGE_FEATS].shape[0])
                 # assert (results[IMAGE_FEATS].shape[0] == 1000)
-            results[IMAGE_FEATS] = results[IMAGE_FEATS].to(device)
-            results[AUDIO_FEATS] = results[AUDIO_FEATS].to(device)
+            results[IMAGE_FEATS] = results[IMAGE_FEATS].cpu()
+            results[AUDIO_FEATS] = results[AUDIO_FEATS].cuda()
             if self.sim_use_cls:
                 results[AUDIO_CLS] = results[AUDIO_CLS].cuda()
                 results[AUDIO_CLS] = results[AUDIO_CLS].cuda()
 
-            results[AUDIO_MASK] = results[AUDIO_MASK].to(device)
+            results[AUDIO_MASK] = results[AUDIO_MASK].cuda()
 
             recalls = self.calc_recalls(results, dataset_name)
 
-            results[IMAGE_FEATS] = results[IMAGE_FEATS].to(device)
+            results[IMAGE_FEATS] = results[IMAGE_FEATS].cuda()
 
             writer = self.logger.experiment
             print("here")
@@ -1168,19 +1167,18 @@ def my_app(cfg: DictConfig) -> None:
 
     def run_exp(aligner, full_train):
         trainer_args = dict(
-            # accelerator='gpu',
-            max_epochs=2,
-            accelerator='mps',
-            strategy=None,
-            devices=1,
-            precision="16",  # Mixed precision for better performance on MPS
+            accelerator='gpu',
+            strategy=strategy,
+            devices=cfg.num_gpus,
             num_sanity_val_steps=cfg.num_sanity_val_steps,
-            log_every_n_steps=2,
+            log_every_n_steps=50,
             reload_dataloaders_every_n_epochs=10,
+            precision="16",
             # profiler="simple",
             # precision="bf16",
             max_steps=cfg.max_steps,
             **val_args)
+
 
         aligner.set_full_train(full_train)
         if full_train:

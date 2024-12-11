@@ -15,7 +15,7 @@ The main contribution is the addition of a subclass `VisTextDataset` in the `dat
 
 ---
 
-## dataset Structure
+## Dataset Structure
 ```
 /dataset_root
 - /audio
